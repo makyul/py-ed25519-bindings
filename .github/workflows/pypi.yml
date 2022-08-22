@@ -1,16 +1,40 @@
-name: Test PyPI
+name: wheels for musllinux
 
 on:
   push:
 
+
 jobs:
-  linux:
-    runs-on: ubuntu_latest
+  build:
+    runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-        target: [x86_64, i686]
+        include:
+          - docker-image: quay.io/pypa/musllinux_1_1_aarch64
+            platform: musllinux_1_1_aarch64
+            qemu: true
+            pre-cmd: ""
     steps:
+      - name: Set up QEMU
+        if: ${{matrix.qemu == true}}
+        id: qemu
+        uses: docker/setup-qemu-action@v1
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: all
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Build wheels
+        uses: addnab/docker-run-action@v3 # https://aschmelyun.com/blog/using-docker-run-inside-of-github-actions/
+        with:
+          image: ${{matrix.docker-image}}
+          options: -v ${{ github.workspace }}:/io -e PLAT=${{ matrix.platform }}
+          run: |
+            uname -m
+            cd /io; ls -al
+            ${{ matrix.pre-cmd }} sh build_wheels.sh
+            ls wheelhouse/
       - uses: actions/checkout@v2
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -37,14 +61,8 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
           pytest tests.py
-      - name: Upload wheels
-        uses: actions/upload-artifact@v2
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
-          name: wheels
-          path: dist
-          - name: Upload assets to release
-      uses: softprops/action-gh-release@v1
-      with:
-        name: ${{ steps.get_version.outputs.name }} - check tag
-        tag_name: ${{ steps.get_version.outputs.version }}
-        files: ./dist/*.whl
+          name: artifacts
+          path: wheel
