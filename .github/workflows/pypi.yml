@@ -34,6 +34,7 @@ jobs:
         run: pip install -r requirements.txt
       - name: Build
         run: maturin build
-      - uses: actions/download-artifact@v3
+      - uses: actions/upload-artifact@v3
         with:
-         path: wheels
+          # name: .whl
+          path: wheels # or path/to/artifact
