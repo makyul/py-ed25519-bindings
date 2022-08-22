@@ -37,4 +37,4 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           # name: .whl
-          path: wheels # or path/to/artifact
+          path: home/runner/work/py-ed25519-bindings/py-ed25519-bindings/target/wheels/*.whl # or path/to/artifact
